@@ -1,11 +1,77 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { PortfolioTable } from "@/components/PortfolioTable";
+import { PortfolioDetailCard } from "@/components/PortfolioDetailCard";
+import { FactorComparison } from "@/components/FactorComparison";
+import { BacktestChart } from "@/components/BacktestChart";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-background p-4">
+      <header className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl font-bold text-foreground">Portfolio Comparison</h1>
+          <div className="flex gap-2">
+            <button className="px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded">New</button>
+            <select className="bg-secondary text-xs px-3 py-1.5 rounded border border-border text-foreground">
+              <option>Settings</option>
+            </select>
+            <select className="bg-secondary text-xs px-3 py-1.5 rounded border border-border text-foreground">
+              <option>Opt</option>
+            </select>
+            <select className="bg-secondary text-xs px-3 py-1.5 rounded border border-border text-foreground">
+              <option>Settings</option>
+            </select>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <button className="px-3 py-1.5 text-xs bg-secondary text-secondary-foreground rounded border border-border">
+            Select Benchmark
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Side By Side</span>
+            <label className="relative inline-block w-10 h-5">
+              <input type="checkbox" className="sr-only peer" defaultChecked />
+              <div className="w-10 h-5 bg-success rounded-full peer peer-focus:ring-2 peer-focus:ring-ring"></div>
+              <div className="absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition peer-checked:translate-x-5"></div>
+            </label>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Lookahead</span>
+            <label className="relative inline-block w-10 h-5">
+              <input type="checkbox" className="sr-only peer" />
+              <div className="w-10 h-5 bg-muted rounded-full peer peer-focus:ring-2 peer-focus:ring-ring"></div>
+              <div className="absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition peer-checked:translate-x-5"></div>
+            </label>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Time Machine</span>
+            <label className="relative inline-block w-10 h-5">
+              <input type="checkbox" className="sr-only peer" />
+              <div className="w-10 h-5 bg-muted rounded-full peer peer-focus:ring-2 peer-focus:ring-ring"></div>
+              <div className="absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition peer-checked:translate-x-5"></div>
+            </label>
+          </div>
+          <button className="px-3 py-1.5 text-xs bg-secondary text-secondary-foreground rounded border border-border">
+            Save as New Portfolio
+          </button>
+        </div>
+      </header>
+
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="col-span-2">
+          <PortfolioTable />
+        </div>
+        <div>
+          <PortfolioDetailCard />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <div className="col-span-2">
+          <FactorComparison />
+        </div>
+        <div>
+          <BacktestChart />
+        </div>
       </div>
     </div>
   );
