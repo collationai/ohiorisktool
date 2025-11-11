@@ -21,15 +21,34 @@ serve(async (req) => {
       );
     }
 
-    console.log('Connecting to external database...');
+    const host = Deno.env.get('EXTERNAL_DB_HOST');
+    const port = Deno.env.get('EXTERNAL_DB_PORT') || '5432';
+    const database = Deno.env.get('EXTERNAL_DB_NAME');
+    const user = Deno.env.get('EXTERNAL_DB_USER');
     
-    // Create database pool
+    console.log('Connecting to external database:', { 
+      host, 
+      port, 
+      database, 
+      user,
+      hasPassword: !!Deno.env.get('EXTERNAL_DB_PASSWORD')
+    });
+    
+    // Create database pool with SSL support
     const pool = new postgres.Pool({
-      hostname: Deno.env.get('EXTERNAL_DB_HOST'),
-      port: parseInt(Deno.env.get('EXTERNAL_DB_PORT') || '5432'),
-      database: Deno.env.get('EXTERNAL_DB_NAME'),
-      user: Deno.env.get('EXTERNAL_DB_USER'),
+      hostname: host,
+      port: parseInt(port),
+      database: database,
+      user: user,
       password: Deno.env.get('EXTERNAL_DB_PASSWORD'),
+      tls: {
+        enabled: true,
+        enforce: false,
+        caCertificates: [],
+      },
+      connection: {
+        attempts: 1,
+      },
     }, 3);
 
     const connection = await pool.connect();

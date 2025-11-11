@@ -19,7 +19,7 @@ interface PortfolioRow {
 export const PortfolioTable = () => {
   const [selectedRow, setSelectedRow] = useState<number | null>(6);
   
-  // Query your PostgreSQL database - customize this query based on your schema
+  // Query your PostgreSQL database from collation_storage schema
   const { data: portfolioData, isLoading, error } = useExternalDatabase<PortfolioRow>({
     query: `
       SELECT 
@@ -34,7 +34,7 @@ export const PortfolioTable = () => {
         new_effective_exposure,
         old_effective_exposure,
         delta_pct
-      FROM portfolio_holdings
+      FROM collation_storage.portfolio_holdings
       ORDER BY total DESC
     `,
   });
