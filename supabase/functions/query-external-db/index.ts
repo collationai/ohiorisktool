@@ -34,7 +34,7 @@ serve(async (req) => {
       hasPassword: !!Deno.env.get('EXTERNAL_DB_PASSWORD')
     });
     
-    // Create database pool with SSL support
+    // Create database pool with enforced SSL
     const pool = new postgres.Pool({
       hostname: host,
       port: parseInt(port),
@@ -43,7 +43,7 @@ serve(async (req) => {
       password: Deno.env.get('EXTERNAL_DB_PASSWORD'),
       tls: {
         enabled: true,
-        enforce: false,
+        enforce: true,
         caCertificates: [],
       },
       connection: {
