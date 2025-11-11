@@ -1,3 +1,15 @@
+import { useExternalDatabase } from "@/hooks/useExternalDatabase";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface PortfolioStats {
+  total_securities: number;
+  total_transactions: number;
+  total_value: number;
+  active_portfolios: number;
+  asset_classes: number;
+  avg_security_value: number;
+}
+
 interface DetailRow {
   label: string;
   old: string;
@@ -5,19 +17,64 @@ interface DetailRow {
   delta: string;
 }
 
-const detailData: DetailRow[] = [
-  { label: "% Idio (unhedged)", old: "1.4%", new: "1.4%", delta: "0.0%" },
-  { label: "% SAS Industry || Book Val", old: "1.9%", new: "1.9%", delta: "0.0%" },
-  { label: "Predicted Beta || $all", old: "0.5% | $473", new: "0.5% | $473", delta: "0.0% | $0" },
-  { label: "Long || $all", old: "N/A | $0", new: "N/A | $0", delta: "N/A | $0" },
-  { label: "Short || $all", old: "N/A | $0", new: "N/A | $0", delta: "N/A | $0" },
-  { label: "Effective || Total Positions", old: "N/A | $0", new: "N/A | $0", delta: "N/A | $0" },
-  { label: "Effective || Total Longs", old: "12.9 | $0", new: "12.9 | $0", delta: "0.0 | $0" },
-  { label: "Effective || Total Shorts", old: "N/A | $0", new: "N/A | $0", delta: "N/A | $0" },
-  { label: "PF Sharpe PV ($)", old: "0.72x", new: "0.72x", delta: "0.02x" },
-];
-
 export const PortfolioDetailCard = () => {
+  // Get portfolio statistics
+  const { data: statsData, isLoading } = useExternalDatabase<PortfolioStats>({
+    query: `
+      SELECT
+        COUNT(DISTINCT s.id) as total_securities,
+        COUNT(DISTINCT t.id) as total_transactions,
+        COALESCE(SUM(t.amount), 0) as total_value,
+        COUNT(DISTINCT p.id) as active_portfolios,
+        COUNT(DISTINCT s.asset_class) as asset_classes,
+        COALESCE(AVG(t.amount), 0) as avg_security_value
+      FROM collation_storage.securities s
+      LEFT JOIN collation_storage.transactions t ON s.id = t.security_id
+      LEFT JOIN collation_storage.portfolios p ON t.portfolio_id = p.id
+      WHERE s.is_active = true
+    `,
+  });
+
+  const stats = statsData?.[0];
+
+  const detailData: DetailRow[] = [
+    {
+      label: "Total Securities",
+      new: stats?.total_securities?.toString() || "0",
+      old: stats?.total_securities?.toString() || "0",
+      delta: "0"
+    },
+    {
+      label: "Total Transactions",
+      new: stats?.total_transactions?.toString() || "0",
+      old: stats?.total_transactions?.toString() || "0",
+      delta: "0"
+    },
+    {
+      label: "Portfolio Value ($M)",
+      new: `$${((stats?.total_value || 0) / 1000000).toFixed(2)}`,
+      old: `$${((stats?.total_value || 0) / 1000000).toFixed(2)}`,
+      delta: "$0"
+    },
+    {
+      label: "Active Portfolios",
+      new: stats?.active_portfolios?.toString() || "0",
+      old: stats?.active_portfolios?.toString() || "0",
+      delta: "0"
+    },
+    {
+      label: "Asset Classes",
+      new: stats?.asset_classes?.toString() || "0",
+      old: stats?.asset_classes?.toString() || "0",
+      delta: "0"
+    },
+    {
+      label: "Avg Security Value ($K)",
+      new: `$${((stats?.avg_security_value || 0) / 1000).toFixed(1)}`,
+      old: `$${((stats?.avg_security_value || 0) / 1000).toFixed(1)}`,
+      delta: "$0"
+    },
+  ];
   return (
     <div className="bg-card border border-border rounded">
       <div className="bg-table-header px-3 py-2 border-b border-border">
@@ -28,26 +85,34 @@ export const PortfolioDetailCard = () => {
         </div>
       </div>
       <div className="p-3">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b border-border">
-              <th className="text-left py-2 text-muted-foreground font-medium"></th>
-              <th className="text-right py-2 text-muted-foreground font-medium">New</th>
-              <th className="text-right py-2 text-muted-foreground font-medium">Old</th>
-              <th className="text-right py-2 text-muted-foreground font-medium">Delta</th>
-            </tr>
-          </thead>
-          <tbody>
-            {detailData.map((row, idx) => (
-              <tr key={idx} className="border-b border-border/50">
-                <td className="py-2 text-foreground">{row.label}</td>
-                <td className="py-2 text-right text-foreground">{row.new}</td>
-                <td className="py-2 text-right text-foreground">{row.old}</td>
-                <td className="py-2 text-right text-muted-foreground">{row.delta}</td>
-              </tr>
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <Skeleton key={idx} className="h-8 w-full" />
             ))}
-          </tbody>
-        </table>
+          </div>
+        ) : (
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left py-2 text-muted-foreground font-medium"></th>
+                <th className="text-right py-2 text-muted-foreground font-medium">Current</th>
+                <th className="text-right py-2 text-muted-foreground font-medium">Previous</th>
+                <th className="text-right py-2 text-muted-foreground font-medium">Delta</th>
+              </tr>
+            </thead>
+            <tbody>
+              {detailData.map((row, idx) => (
+                <tr key={idx} className="border-b border-border/50">
+                  <td className="py-2 text-foreground">{row.label}</td>
+                  <td className="py-2 text-right text-foreground">{row.new}</td>
+                  <td className="py-2 text-right text-foreground">{row.old}</td>
+                  <td className="py-2 text-right text-muted-foreground">{row.delta}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
         
         <div className="mt-4 space-y-2">
           <div className="flex items-center justify-between bg-primary/20 px-2 py-1.5 rounded">

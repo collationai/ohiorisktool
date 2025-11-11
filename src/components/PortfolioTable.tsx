@@ -20,22 +20,29 @@ export const PortfolioTable = () => {
   const [selectedRow, setSelectedRow] = useState<number | null>(6);
   
   // Query your PostgreSQL database from collation_storage schema
+  // Aggregate securities with their transaction data to build portfolio holdings
   const { data: portfolioData, isLoading, error } = useExternalDatabase<PortfolioRow>({
     query: `
-      SELECT 
-        name,
-        ticker,
-        total,
-        new_net_invested,
-        old_net_invested,
-        delta,
-        book_gross,
-        book_delta,
-        new_effective_exposure,
-        old_effective_exposure,
-        delta_pct
-      FROM collation_storage.portfolio_holdings
+      SELECT
+        s.name,
+        COALESCE(s.ticker, 'N/A') as ticker,
+        COALESCE(SUM(t.amount), 0) as total,
+        COALESCE(SUM(CASE WHEN t.transaction_date >= CURRENT_DATE - INTERVAL '30 days' THEN t.amount ELSE 0 END), 0) as new_net_invested,
+        COALESCE(SUM(CASE WHEN t.transaction_date < CURRENT_DATE - INTERVAL '30 days' THEN t.amount ELSE 0 END), 0) as old_net_invested,
+        COALESCE(SUM(CASE WHEN t.transaction_date >= CURRENT_DATE - INTERVAL '30 days' THEN t.amount ELSE 0 END), 0) -
+        COALESCE(SUM(CASE WHEN t.transaction_date < CURRENT_DATE - INTERVAL '30 days' THEN t.amount ELSE 0 END), 0) as delta,
+        ROUND((COALESCE(SUM(t.amount), 0) / NULLIF((SELECT SUM(amount) FROM collation_storage.transactions WHERE amount > 0), 0) * 100)::numeric, 2) as book_gross,
+        0 as book_delta,
+        COALESCE(SUM(t.amount * t.quantity), 0) as new_effective_exposure,
+        COALESCE(SUM(t.amount * t.quantity), 0) as old_effective_exposure,
+        0 as delta_pct
+      FROM collation_storage.securities s
+      LEFT JOIN collation_storage.transactions t ON s.id = t.security_id
+      WHERE s.is_active = true
+      GROUP BY s.id, s.name, s.ticker
+      HAVING SUM(t.amount) IS NOT NULL
       ORDER BY total DESC
+      LIMIT 20
     `,
   });
 
